@@ -2,8 +2,8 @@
 
 on:
   push:
-    branches:
-      - MAIN
+branches:
+  - main
   workflow_dispatch:
 
 jobs:
