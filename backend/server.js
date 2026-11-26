@@ -1,6 +1,7 @@
 ﻿const express = require('express');
 const cors = require('cors');
 const pool = require('./db');
+const validarMaterial = require('./validators/materialValidator');
 
 const app = express();
 
@@ -30,8 +31,16 @@ app.post('/api/materiales', async (req, res) => {
   try {
     const { nombre, descripcion, cantidad, unidad, usuario_id } = req.body;
 
-    if (!nombre || !cantidad || !usuario_id || Number(cantidad) <= 0) {
-      return res.status(400).json({ error: 'Datos de material inválidos' });
+    const validacion = validarMaterial({
+      nombre,
+      cantidad,
+      usuario_id
+    });
+
+    if (!validacion.valido) {
+      return res.status(400).json({
+        error: 'Datos de material inválidos'
+      });
     }
 
     const resultado = await pool.query(
@@ -46,7 +55,6 @@ app.post('/api/materiales', async (req, res) => {
     res.status(500).json({ error: 'No se pudo registrar el material' });
   }
 });
-
 const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
