@@ -1,0 +1,58 @@
+﻿name: EcoPunto - Pruebas DEV
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ecopunto_test_password
+          POSTGRES_DB: ecopunto
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ecopunto"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Crear tablas de PostgreSQL
+        env:
+          PGPASSWORD: ecopunto_test_password
+        run: psql -h localhost -U postgres -d ecopunto -f ../database/init.sql
+
+      - name: Ejecutar pruebas automatizadas
+        env:
+          DB_USER: postgres
+          DB_HOST: localhost
+          DB_NAME: ecopunto
+          DB_PASSWORD: ecopunto_test_password
+          DB_PORT: 5432
+        run: npm test
